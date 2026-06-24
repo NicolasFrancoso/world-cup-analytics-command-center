@@ -6,6 +6,8 @@ from transform import (
     build_fact_matches,
     build_team_performance,
     build_world_cup_summary_by_year,
+    build_dim_date,
+    build_dim_team
 )
 from load import save_dataframe
 
@@ -34,6 +36,8 @@ def main():
     fact_matches = build_fact_matches(df_world_cup)
     team_performance = build_team_performance(df_world_cup)
     summary_by_year = build_world_cup_summary_by_year(df_world_cup)
+    dim_date = build_dim_date(df_world_cup)
+    dim_team = build_dim_team(df_world_cup)
 
     print("Saving gold tables...")
     fact_matches_file = save_dataframe(
@@ -53,6 +57,18 @@ def main():
         output_path=gold_data_path,
         file_name="world_cup_summary_by_year.csv",
     )
+    
+    dim_date_file = save_dataframe(
+        df=dim_date,
+        output_path=gold_data_path,
+        file_name="dim_date.csv",
+    )
+
+    dim_team_file = save_dataframe(
+        df=dim_team,
+        output_path=gold_data_path,
+        file_name="dim_team.csv",
+    )
 
     print("Pipeline completed successfully.")
     print(f"Processed rows: {len(df_world_cup):,}")
@@ -60,6 +76,8 @@ def main():
     print(f"Fact matches file: {fact_matches_file}")
     print(f"Team performance file: {team_performance_file}")
     print(f"Summary by year file: {summary_by_year_file}")
+    print(f"Dim date file: {dim_date_file}")
+    print(f"Dim team file: {dim_team_file}")
 
 
 if __name__ == "__main__":

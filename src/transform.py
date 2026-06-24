@@ -292,3 +292,58 @@ def build_world_cup_summary_by_year(df: pd.DataFrame) -> pd.DataFrame:
     summary_by_year = summary_by_year.drop(columns=["teams_home", "teams_away"])
 
     return summary_by_year
+
+def build_dim_date(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build a date dimension table based on World Cup match dates.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Processed World Cup matches dataframe.
+
+    Returns
+    -------
+    pd.DataFrame
+        Date dimension table.
+    """
+    dim_date = df[["date"]].drop_duplicates().copy()
+
+    dim_date["date"] = pd.to_datetime(dim_date["date"])
+    dim_date["year"] = dim_date["date"].dt.year
+    dim_date["month"] = dim_date["date"].dt.month
+    dim_date["day"] = dim_date["date"].dt.day
+    dim_date["day_of_week"] = dim_date["date"].dt.day_name()
+    dim_date["quarter"] = dim_date["date"].dt.quarter
+    dim_date["decade"] = (dim_date["year"] // 10) * 10
+
+    dim_date = dim_date.sort_values("date").reset_index(drop=True)
+
+    return dim_date
+
+
+def build_dim_team(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build a team dimension table using all teams that played World Cup matches.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Processed World Cup matches dataframe.
+
+    Returns
+    -------
+    pd.DataFrame
+        Team dimension table.
+    """
+    home_teams = df[["home_team"]].rename(columns={"home_team": "team"})
+    away_teams = df[["away_team"]].rename(columns={"away_team": "team"})
+
+    dim_team = pd.concat([home_teams, away_teams], ignore_index=True)
+    dim_team = dim_team.drop_duplicates().sort_values("team").reset_index(drop=True)
+
+    dim_team["team_id"] = range(1, len(dim_team) + 1)
+
+    dim_team = dim_team[["team_id", "team"]]
+
+    return dim_team
