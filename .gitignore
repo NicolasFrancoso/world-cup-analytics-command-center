@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Data files
+data/raw
+data/processed
+data/gold
+outputs/
+
+# Keep folder structure
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/gold/.gitkeep
+!outputs/.gitkeep
+
+# Power BI temporary files
+*.pbitmp
