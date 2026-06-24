@@ -119,3 +119,176 @@ def build_world_cup_matches_dataset(df: pd.DataFrame) -> pd.DataFrame:
     df_world_cup = add_match_features(df_world_cup)
 
     return df_world_cup
+
+def build_fact_matches(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build the main fact table for World Cup matches.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Processed World Cup matches dataframe.
+
+    Returns
+    -------
+    pd.DataFrame
+        Fact table with match-level information.
+    """
+    fact_matches = df.copy()
+
+    fact_matches = fact_matches[
+        [
+            "date",
+            "year",
+            "month",
+            "decade",
+            "home_team",
+            "away_team",
+            "home_score",
+            "away_score",
+            "tournament",
+            "city",
+            "country",
+            "neutral",
+            "total_goals",
+            "result",
+            "home_points",
+            "away_points",
+            "goal_difference",
+        ]
+    ]
+
+    return fact_matches
+
+
+def build_team_performance(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build team-level performance table from World Cup matches.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Processed World Cup matches dataframe.
+
+    Returns
+    -------
+    pd.DataFrame
+        Team-level performance table.
+    """
+    home = df[
+        [
+            "year",
+            "home_team",
+            "home_score",
+            "away_score",
+            "home_points",
+        ]
+    ].copy()
+
+    home.columns = [
+        "year",
+        "team",
+        "goals_for",
+        "goals_against",
+        "points",
+    ]
+
+    home["matches_played"] = 1
+    home["wins"] = (home["points"] == 3).astype(int)
+    home["draws"] = (home["points"] == 1).astype(int)
+    home["losses"] = (home["points"] == 0).astype(int)
+
+    away = df[
+        [
+            "year",
+            "away_team",
+            "away_score",
+            "home_score",
+            "away_points",
+        ]
+    ].copy()
+
+    away.columns = [
+        "year",
+        "team",
+        "goals_for",
+        "goals_against",
+        "points",
+    ]
+
+    away["matches_played"] = 1
+    away["wins"] = (away["points"] == 3).astype(int)
+    away["draws"] = (away["points"] == 1).astype(int)
+    away["losses"] = (away["points"] == 0).astype(int)
+
+    team_matches = pd.concat([home, away], ignore_index=True)
+
+    team_performance = (
+        team_matches.groupby(["year", "team"], as_index=False)
+        .agg(
+            matches_played=("matches_played", "sum"),
+            wins=("wins", "sum"),
+            draws=("draws", "sum"),
+            losses=("losses", "sum"),
+            goals_for=("goals_for", "sum"),
+            goals_against=("goals_against", "sum"),
+            points=("points", "sum"),
+        )
+    )
+
+    team_performance["goal_difference"] = (
+        team_performance["goals_for"] - team_performance["goals_against"]
+    )
+
+    team_performance["win_rate"] = (
+        team_performance["wins"] / team_performance["matches_played"]
+    )
+
+    team_performance["goals_per_match"] = (
+        team_performance["goals_for"] / team_performance["matches_played"]
+    )
+
+    team_performance["goals_against_per_match"] = (
+        team_performance["goals_against"] / team_performance["matches_played"]
+    )
+
+    team_performance = team_performance.sort_values(
+        by=["year", "points", "goal_difference", "goals_for"],
+        ascending=[True, False, False, False],
+    )
+
+    return team_performance
+
+
+def build_world_cup_summary_by_year(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build yearly World Cup summary table.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Processed World Cup matches dataframe.
+
+    Returns
+    -------
+    pd.DataFrame
+        Summary table by World Cup year.
+    """
+    summary_by_year = (
+        df.groupby("year", as_index=False)
+        .agg(
+            matches=("date", "count"),
+            total_goals=("total_goals", "sum"),
+            avg_goals_per_match=("total_goals", "mean"),
+            host_countries=("country", "nunique"),
+            cities=("city", "nunique"),
+            teams_home=("home_team", "nunique"),
+            teams_away=("away_team", "nunique"),
+        )
+    )
+
+    summary_by_year["teams"] = summary_by_year[["teams_home", "teams_away"]].max(axis=1)
+
+    summary_by_year = summary_by_year.drop(columns=["teams_home", "teams_away"])
+
+    return summary_by_year
