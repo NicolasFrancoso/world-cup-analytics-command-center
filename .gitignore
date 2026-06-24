@@ -231,3 +231,7 @@ outputs/
 
 # Power BI temporary files
 *.pbitmp
+
+# Local analytical database
+database/*.duckdb
+database/*.duckdb.wal
